@@ -17,10 +17,11 @@ import { Fonts } from '../../theme/Fonts';
 import { scale, moderateScale, verticalScale } from '../../utils/Scalling';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import UserService from '../../services/userService';
-import { handleApiCall } from '../../utils/graphqlUtils';
+import { handleApiCallWithLoader } from '../../utils/graphqlUtils';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../store/authSlice';
 import { saveTokens } from '../../services/apiService';
+import Loader from '../../components/Loader'; // Import Loader component
 
 const Login = () => {
   const navigation = useNavigation();
@@ -34,6 +35,7 @@ const Login = () => {
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showLoader, setShowLoader] = useState(false); // Loader state
 
   const validateEmail = emailValue => {
     if (!emailValue || !emailValue.trim()) {
@@ -95,11 +97,13 @@ const Login = () => {
       setIsLoading(true);
 
       try {
-        // Use handleApiCall to ensure proper toast notifications
-        const result = await handleApiCall(
+        // Use handleApiCallWithLoader to ensure proper toast notifications and loader display
+        const result = await handleApiCallWithLoader(
           () => UserService.login(email, password),
           'Login successful!', // This message will only show for truly successful logins
           'login',
+          () => setShowLoader(true),
+          () => setShowLoader(false)
         );
 
         if (result.success) {
@@ -128,10 +132,10 @@ const Login = () => {
           // Navigate to bottom tab navigator
           navigation.navigate('BottomTab');
         } else {
-          // Error message is already displayed via toast in handleApiCall
+          // Error message is already displayed via toast in handleApiCallWithLoader
         }
       } catch (error) {
-        // Error message is already displayed via toast in handleApiCall
+        // Error message is already displayed via toast in handleApiCallWithLoader
       } finally {
         setIsLoading(false);
       }
@@ -164,6 +168,7 @@ const Login = () => {
           titleColor={COLORS.white} 
           showBackButton={navigation.canGoBack()}
         />
+        <Loader visible={showLoader} />
 
         <ScrollView
           style={styles.scrollView}

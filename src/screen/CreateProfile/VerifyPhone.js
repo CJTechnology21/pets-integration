@@ -9,7 +9,8 @@ import { Fonts } from '../../theme/Fonts';
 import { scale, moderateScale, verticalScale } from '../../utils/Scalling';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import UserService from '../../services/userService';
-import { handleApiCall } from '../../utils/graphqlUtils';
+import { handleApiCallWithLoader } from '../../utils/graphqlUtils';
+import Loader from '../../components/Loader'; // Import Loader component
 
 const VerifyPhone = () => {
   const navigation = useNavigation();
@@ -21,6 +22,7 @@ const VerifyPhone = () => {
   const [timer, setTimer] = useState(270); // 04:30
   const [canResend, setCanResend] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [showLoader, setShowLoader] = useState(false); // Loader state
   const otpInputRef = useRef(null);
 
   useEffect(() => {
@@ -53,11 +55,13 @@ const VerifyPhone = () => {
 
   const handleContinue = async () => {
     if (otp.length === 6) {
-      // Use handleApiCall to ensure proper toast notifications
-      const result = await handleApiCall(
+      // Use handleApiCallWithLoader to ensure proper toast notifications and loader display
+      const result = await handleApiCallWithLoader(
         () => UserService.verifyOtpForSignup(email, otp),
         'OTP verified successfully!',
-        'verifyOtpForSignup'
+        'verifyOtpForSignup',
+        () => setShowLoader(true),
+        () => setShowLoader(false)
       );
       
       if (result.success) {
@@ -67,7 +71,7 @@ const VerifyPhone = () => {
           routes: [{ name: 'Login' }],
         });
       } else {
-        // Error message is already displayed via toast in handleApiCall
+        // Error message is already displayed via toast in handleApiCallWithLoader
       }
     }
   };
@@ -90,6 +94,7 @@ const VerifyPhone = () => {
       statusBarBackgroundColor={COLORS.background}
     >
       <CustomHeader title="Verify Phone" />
+      <Loader visible={showLoader} />
       
       <View style={styles.content}>
         <View style={styles.illustrationContainer}>

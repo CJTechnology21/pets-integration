@@ -21,7 +21,8 @@ import { useNavigation } from '@react-navigation/native';
 import StepProgress from '../../components/StepProgress/StepProgress';
 import PhoneNumberInput from 'react-native-phone-number-input';
 import UserService from '../../services/userService';
-import { handleApiCall } from '../../utils/graphqlUtils'; // Import handleApiCall function
+import { handleApiCallWithLoader } from '../../utils/graphqlUtils'; // Import handleApiCallWithLoader function
+import Loader from '../../components/Loader'; // Import Loader component
 
 const CreateProfile = () => {
   const navigation = useNavigation();
@@ -33,6 +34,7 @@ const CreateProfile = () => {
   const phoneInputRef = useRef(null);
   const [formattedPhoneNumber, setFormattedPhoneNumber] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showLoader, setShowLoader] = useState(false); // Loader state
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -286,6 +288,26 @@ const CreateProfile = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate all fields before submission
+    const newErrors = {};
+    newErrors.firstName = validateName(firstName, 'First name');
+    newErrors.lastName = validateName(lastName, 'Last name');
+    newErrors.email = validateEmail(email); // Validate email
+    newErrors.dob = validateDOB(dob);
+    newErrors.username = validateUsername(username);
+    newErrors.password = validatePassword(password);
+    newErrors.confirmPassword = validateConfirmPassword(confirmPassword);
+    newErrors.country = validateCountry(country);
+    newErrors.phoneNumber = validatePhoneNumber(phoneNumber);
+
+    setErrors(newErrors);
+
+    // Check if there are any validation errors
+    const hasErrors = Object.values(newErrors).some(error => error !== '');
+    if (hasErrors) {
+      return;
+    }
+
     setIsRegistering(true);
 
     const userData = {
@@ -299,11 +321,13 @@ const CreateProfile = () => {
     };
 
     try {
-      // Use handleApiCall to ensure proper toast notifications
-      const result = await handleApiCall(
+      // Use handleApiCallWithLoader to ensure proper toast notifications and loader display
+      const result = await handleApiCallWithLoader(
         () => UserService.createUser(userData),
         'Account created successfully!',
         'createUser',
+        () => setShowLoader(true),
+        () => setShowLoader(false)
       );
 
       if (result.success) {
@@ -314,11 +338,11 @@ const CreateProfile = () => {
         navigation.navigate('VerifyPhone', { email });
       } else {
         setIsRegistering(false);
-        // Error message is already displayed via toast in handleApiCall
+        // Error message is already displayed via toast in handleApiCallWithLoader
       }
     } catch (error) {
       setIsRegistering(false);
-      // Error message is already displayed via toast in handleApiCall
+      // Error message is already displayed via toast in handleApiCallWithLoader
     }
   };
 
@@ -357,6 +381,7 @@ const CreateProfile = () => {
           onBackPress={handleBack}
           showBackButton={false}
         />
+        <Loader visible={showLoader} />
 
         <ScrollView
           style={styles.scrollView}

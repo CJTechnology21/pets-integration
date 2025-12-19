@@ -95,7 +95,54 @@ export const logApiResponse = (operationName, response, isSuccess = true) => {
   }
 };
 
-// Wrap API calls with standardized error handling and logging
+// Wrap API calls with standardized error handling, logging, and loader display
+export const handleApiCallWithLoader = async (apiCall, successMessage, operationName = 'API Call', showLoader, hideLoader) => {
+  try {
+    // Show loader if provided
+    if (showLoader) {
+      showLoader();
+    }
+
+    console.log(`[API] Executing ${operationName}`);
+    const response = await apiCall();
+    
+    // Hide loader if provided
+    if (hideLoader) {
+      hideLoader();
+    }
+
+    if (response.success) {
+      logApiResponse(operationName, response, true);
+      if (successMessage) {
+        showToast(successMessage, 'success');
+      }
+    } else {
+      logApiResponse(operationName, response, false);
+      // Check if this is a business logic error with a message
+      if (response.error && response.error.message) {
+        showToast(response.error.message, 'error');
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    // Hide loader if provided
+    if (hideLoader) {
+      hideLoader();
+    }
+
+    console.error(`[API Exception] ${operationName} failed:`, error);
+    const normalizedError = normalizeGraphQLError(error);
+    showToast(normalizedError.message, 'error');
+    
+    return {
+      success: false,
+      error: normalizedError,
+    };
+  }
+};
+
+// Wrap API calls with standardized error handling and logging (without loader)
 export const handleApiCall = async (apiCall, successMessage, operationName = 'API Call') => {
   try {
     console.log(`[API] Executing ${operationName}`);

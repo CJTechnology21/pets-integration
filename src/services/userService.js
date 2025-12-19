@@ -33,6 +33,35 @@ class UserService {
 
       if (response.success) {
         console.log('[UserService] User created successfully:', response.data);
+        
+        // Check the business logic status in the response
+        // Handle both possible response structures
+        let createUserResponse;
+        if (response.data && response.data.createUser) {
+          // Standard structure
+          createUserResponse = response.data.createUser;
+        } else if (response.data) {
+          // Direct response structure
+          createUserResponse = response.data;
+        } else {
+          // Return the response as-is if no data structure is found
+          return response;
+        }
+        
+        // Check if it's a business logic success or failure
+        if (createUserResponse.status === true) {
+          // Business logic success
+          return response;
+        } else {
+          // Business logic failure
+          return {
+            success: false,
+            error: {
+              code: createUserResponse.code || 'CREATE_USER_FAILED',
+              message: createUserResponse.message || 'Failed to create user',
+            },
+          };
+        }
       } else {
         console.error('[UserService] Failed to create user:', response.error);
       }
@@ -62,6 +91,35 @@ class UserService {
 
       if (response.success) {
         console.log('[UserService] OTP sent successfully:', response.data);
+        
+        // Check the business logic status in the response
+        // Handle both possible response structures
+        let sendOtpResponse;
+        if (response.data && response.data.sendOtpForSignup) {
+          // Standard structure
+          sendOtpResponse = response.data.sendOtpForSignup;
+        } else if (response.data) {
+          // Direct response structure
+          sendOtpResponse = response.data;
+        } else {
+          // Return the response as-is if no data structure is found
+          return response;
+        }
+        
+        // Check if it's a business logic success or failure
+        if (sendOtpResponse.status === true) {
+          // Business logic success
+          return response;
+        } else {
+          // Business logic failure
+          return {
+            success: false,
+            error: {
+              code: sendOtpResponse.code || 'SEND_OTP_FAILED',
+              message: sendOtpResponse.message || 'Failed to send OTP',
+            },
+          };
+        }
       } else {
         console.error('[UserService] Failed to send OTP:', response.error);
       }
@@ -96,6 +154,35 @@ class UserService {
 
       if (response.success) {
         console.log('[UserService] OTP verified successfully:', response.data);
+        
+        // Check the business logic status in the response
+        // Handle both possible response structures
+        let verifyOtpResponse;
+        if (response.data && response.data.verifyOtpForSignup) {
+          // Standard structure
+          verifyOtpResponse = response.data.verifyOtpForSignup;
+        } else if (response.data) {
+          // Direct response structure
+          verifyOtpResponse = response.data;
+        } else {
+          // Return the response as-is if no data structure is found
+          return response;
+        }
+        
+        // Check if it's a business logic success or failure
+        if (verifyOtpResponse.status === true) {
+          // Business logic success
+          return response;
+        } else {
+          // Business logic failure
+          return {
+            success: false,
+            error: {
+              code: verifyOtpResponse.code || 'VERIFY_OTP_FAILED',
+              message: verifyOtpResponse.message || 'Failed to verify OTP',
+            },
+          };
+        }
       } else {
         console.error('[UserService] Failed to verify OTP:', response.error);
       }
@@ -127,7 +214,25 @@ class UserService {
         console.log('[UserService] Login response received:', response.data);
 
         // Check the business logic status in the response
-        const loginResponse = response.data.login;
+        // Handle both possible response structures
+        let loginResponse;
+        if (response.data && response.data.login) {
+          // Standard structure
+          loginResponse = response.data.login;
+        } else if (response.data) {
+          // Direct response structure (as seen in the error log)
+          loginResponse = response.data;
+        } else {
+          // Fallback
+          console.error('[UserService] Unexpected response structure:', response);
+          return {
+            success: false,
+            error: {
+              code: 'LOGIN_FAILED',
+              message: 'Unexpected response structure from server',
+            },
+          };
+        }
 
         if (loginResponse.status === true) {
           // Successful login
@@ -145,7 +250,7 @@ class UserService {
           return {
             success: false,
             error: {
-              code: 'LOGIN_FAILED',
+              code: loginResponse.code || 'LOGIN_FAILED',
               message: loginResponse.message || 'Login failed',
             },
           };
@@ -181,6 +286,35 @@ class UserService {
 
       if (response.success) {
         console.log('[UserService] Registration successful:', response.data);
+        
+        // Check the business logic status in the response
+        // Handle both possible response structures
+        let registerResponse;
+        if (response.data && response.data.register) {
+          // Standard structure
+          registerResponse = response.data.register;
+        } else if (response.data) {
+          // Direct response structure
+          registerResponse = response.data;
+        } else {
+          // Return the response as-is if no data structure is found
+          return response;
+        }
+        
+        // Check if it's a business logic success or failure
+        if (registerResponse.status === true) {
+          // Business logic success
+          return response;
+        } else {
+          // Business logic failure
+          return {
+            success: false,
+            error: {
+              code: registerResponse.code || 'REGISTER_FAILED',
+              message: registerResponse.message || 'Registration failed',
+            },
+          };
+        }
       } else {
         console.error('[UserService] Registration failed:', response.error);
       }
@@ -213,6 +347,35 @@ class UserService {
           '[UserService] User profile fetched successfully:',
           response.data,
         );
+        
+        // Check the business logic status in the response
+        // Handle both possible response structures
+        let userProfileResponse;
+        if (response.data && response.data.getUserProfile) {
+          // Standard structure
+          userProfileResponse = response.data.getUserProfile;
+        } else if (response.data) {
+          // Direct response structure
+          userProfileResponse = response.data;
+        } else {
+          // Return the response as-is if no data structure is found
+          return response;
+        }
+        
+        // Check if it's a business logic success or failure
+        if (userProfileResponse.status === true) {
+          // Business logic success
+          return response;
+        } else {
+          // Business logic failure
+          return {
+            success: false,
+            error: {
+              code: userProfileResponse.code || 'GET_PROFILE_FAILED',
+              message: userProfileResponse.message || 'Failed to fetch user profile',
+            },
+          };
+        }
       } else {
         console.error(
           '[UserService] Failed to fetch user profile:',
@@ -253,7 +416,25 @@ class UserService {
         );
 
         // Check the business logic status in the response
-        const resetResponse = response.data.sendPasswordResetEmail;
+        // Handle both possible response structures
+        let resetResponse;
+        if (response.data && response.data.sendPasswordResetEmail) {
+          // Standard structure
+          resetResponse = response.data.sendPasswordResetEmail;
+        } else if (response.data) {
+          // Direct response structure (as seen in the error log)
+          resetResponse = response.data;
+        } else {
+          // Fallback
+          console.error('[UserService] Unexpected response structure:', response);
+          return {
+            success: false,
+            error: {
+              code: 'RESET_FAILED',
+              message: 'Unexpected response structure from server',
+            },
+          };
+        }
 
         if (resetResponse.status === true) {
           // Successful reset email sent
@@ -274,7 +455,7 @@ class UserService {
           return {
             success: false,
             error: {
-              code: 'RESET_FAILED',
+              code: resetResponse.code || 'RESET_FAILED',
               message:
                 resetResponse.message || 'Failed to send password reset email',
             },
@@ -319,7 +500,25 @@ class UserService {
         );
 
         // Check the business logic status in the response
-        const resetResponse = response.data.sendPasswordResetPhone;
+        // Handle both possible response structures
+        let resetResponse;
+        if (response.data && response.data.sendPasswordResetPhone) {
+          // Standard structure
+          resetResponse = response.data.sendPasswordResetPhone;
+        } else if (response.data) {
+          // Direct response structure (as seen in the error log)
+          resetResponse = response.data;
+        } else {
+          // Fallback
+          console.error('[UserService] Unexpected response structure:', response);
+          return {
+            success: false,
+            error: {
+              code: 'RESET_FAILED',
+              message: 'Unexpected response structure from server',
+            },
+          };
+        }
 
         if (resetResponse.status === true) {
           // Successful reset SMS sent
@@ -340,7 +539,7 @@ class UserService {
           return {
             success: false,
             error: {
-              code: 'RESET_FAILED',
+              code: resetResponse.code || 'RESET_FAILED',
               message:
                 resetResponse.message || 'Failed to send password reset SMS',
             },
