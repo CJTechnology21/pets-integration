@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "866670879122",
+    "project_id": "petapp-11fa3",
+    "storage_bucket": "petapp-11fa3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:866670879122:android:6defa62016f6cc8ef9214b",
+        "android_client_info": {
+          "package_name": "com.petroast"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "866670879122-j78fn4pickf3tgt2k5ulp3je5tl5jk88.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.petroast",
+            "certificate_hash": "4df293ba8b01f6ec07148e212d1417e04b779959"
+          }
+        },
+        {
+          "client_id": "866670879122-r0tt2gr0lau3blqdm0m7o83tadutidno.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.petroast",
+            "certificate_hash": "06030542a1c24c4ed9422a3fa03ee108aad37cb9"
+          }
+        },
+        {
+          "client_id": "866670879122-039tdkivpv9ab3rs6bgtlmoeg6uf56no.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZqLYOVZ4pMs42a-EGM6K7aFfJJ_Knp9s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "866670879122-039tdkivpv9ab3rs6bgtlmoeg6uf56no.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "866670879122-d9e4cc1jsme5891rv36s2645d9boivbh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.PetRoast"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

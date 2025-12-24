@@ -22,7 +22,8 @@ import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../store/authSlice';
 import { saveTokens } from '../../services/apiService';
 import Loader from '../../components/Loader'; // Import Loader component
-
+import { signInWithGoogle } from '../../services/googleSignInService';
+import Toast from 'react-native-toast-message';
 const Login = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -103,7 +104,7 @@ const Login = () => {
           'Login successful!', // This message will only show for truly successful logins
           'login',
           () => setShowLoader(true),
-          () => setShowLoader(false)
+          () => setShowLoader(false),
         );
 
         if (result.success) {
@@ -146,10 +147,38 @@ const Login = () => {
     navigation.navigate('CreateProfile');
   };
 
-  const handleGoogle = () => {
-    // Google login handler
-  };
+  const handleGoogle = async () => {
+    try {
+      setIsLoading(true);
+      const result = await signInWithGoogle();
+      console.log('result was >>>>.', result);
 
+      if (result.success) {
+        // Navigate to bottom tab navigator
+        navigation.navigate('BottomTab');
+        Toast.show({
+          type: 'success',
+          text1: 'Login Successful!',
+          text2: 'You have been logged in with Google',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: result.error.message || 'Failed to sign in with Google',
+        });
+      }
+    } catch (error) {
+      console.error('[Login] Google sign in error:', JSON.stringify(error));
+      Toast.show({
+        type: 'error',
+        text1: 'Login Error',
+        text2: 'An unexpected error occurred during Google sign in',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const handleEmail = () => {
     // Email login handler
   };
@@ -163,9 +192,9 @@ const Login = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <CustomHeader 
-          title="Login" 
-          titleColor={COLORS.white} 
+        <CustomHeader
+          title="Login"
+          titleColor={COLORS.white}
           showBackButton={navigation.canGoBack()}
         />
         <Loader visible={showLoader} />
