@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { ImageBackground, View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, StatusBar, ActivityIndicator, Animated, PanResponder, FlatList, Dimensions, TextInput, Modal, Keyboard, Platform,Pressable, Share, Alert } from "react-native";
+import { ImageBackground, View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, StatusBar, ActivityIndicator, Animated, PanResponder, FlatList, Dimensions, TextInput, Modal, Keyboard, Platform, Pressable, Share, Alert } from "react-native";
 import { launchImageLibrary } from "react-native-image-picker";
-import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission } from "react-native-vision-camera";
+// Replace react-native-vision-camera with Banuba camera
+// import { Camera, useCameraDevice, useCameraPermission, useMicrophonePermission } from "react-native-vision-camera";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Video from "react-native-video";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
@@ -16,6 +17,23 @@ import CameraFilterItem from "../CameraFilterItem/CameraFilterItem";
 import RecordingIndicator from "../RecordingIndicator/RecordingIndicator";
 import FilterThumbnail from "../FilterThumbnail/FilterThumbnail";
 import ToolbarButton from "../ToolbarButton/ToolbarButton";
+import BanubaCamera from '../BanubaCamera/BanubaCamera';
+
+// Mock camera permission hooks for compatibility
+const useCameraPermission = () => ({
+  hasPermission: true,
+  requestPermission: () => Promise.resolve(true),
+});
+
+const useMicrophonePermission = () => ({
+  hasPermission: true,
+  requestPermission: () => Promise.resolve(true),
+});
+
+const useCameraDevice = (type) => ({
+  // Mock device for compatibility
+  name: `${type} camera`,
+});
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const FILTER_ITEM_INTERVAL = 95;
@@ -145,10 +163,8 @@ const FaceOverlay = ({
     { id: 'Comics', label: 'Comics', icon: '🎥' },
   ];
   
-  const camera = useRef(null);
-  const backDevice = useCameraDevice('back');
-  const frontDevice = useCameraDevice('front');
-  const [cameraType, setCameraType] = useState('back'); 
+  const banubaCameraRef = useRef(null);
+  const [cameraType, setCameraType] = useState('front'); // Banuba typically defaults to front camera
   const { hasPermission, requestPermission } = useCameraPermission();
   const { hasPermission: hasMicPermission, requestPermission: requestMicPermission } = useMicrophonePermission();
   const recordingTimerRef = useRef(null);
@@ -156,11 +172,14 @@ const FaceOverlay = ({
   const longPressTimerRef = useRef(null);
   const isLongPressRef = useRef(false);
 
-  const currentDevice = cameraType === 'front' ? frontDevice : backDevice;
-
-  // Toggle camera function
-  const toggleCamera = () => {
-    setCameraType(prev => prev === 'back' ? 'front' : 'back');
+  // In Banuba implementation, we don't need to manage device references manually
+  // Toggle camera function - now handled by Banuba
+  const toggleCamera = async () => {
+    if (banubaCameraRef.current) {
+      await banubaCameraRef.current.toggleCamera();
+      // Update state to reflect camera change
+      setCameraType(prev => prev === 'back' ? 'front' : 'back');
+    }
   };
 
   useEffect(() => {
@@ -213,18 +232,16 @@ const FaceOverlay = ({
   }, [title]);
 
   const handleCapture = async () => {
-    if (!camera.current || !currentDevice || isCapturing || isRecording) return;
+    if (!banubaCameraRef.current || isCapturing || isRecording) return;
     
     try {
       setIsCapturing(true);
-      const photo = await camera.current.takePhoto({
-        flash: flashMode,
-      });
-      const imageUri = `file://${photo.path}`;
-      setCapturedImage(imageUri);
+      // Use Banuba's capture method
+      const photo = await banubaCameraRef.current.capturePhoto();
+      setCapturedImage(photo.uri);
       setCapturedVideo(null);
       setSelectedFilterIndex(0); 
-      onCapture(imageUri, photo);
+      onCapture(photo.uri, photo);
       onImageStateChange(true);
       setImageCaptured(true);
     } catch (error) {
@@ -235,56 +252,55 @@ const FaceOverlay = ({
   };
 
   const startRecording = async () => {
-    if (!camera.current || !currentDevice || isRecording || isCapturing) return;
+    if (!banubaCameraRef.current || isRecording || isCapturing) return;
     
     try {
       setIsRecording(true);
       setRecordingTime(0);
-      await camera.current.startRecording({
-        flash: flashMode,
-        onRecordingFinished: (video) => {
-          const videoUri = `file://${video.path}`;
-          setCapturedVideo(videoUri);
-          setCapturedImage(null);
-          setIsRecording(false);
-          setRecordingTime(0);
-          if (recordingTimerRef.current) {
-            clearInterval(recordingTimerRef.current);
-          }
-          onVideoRecorded(videoUri, video);
-          onImageStateChange(true);
-          setImageCaptured(true);
-        },
-        onRecordingError: (error) => {
-          console.error('Error recording video:', error);
-          setIsRecording(false);
-          setRecordingTime(0);
-          if (recordingTimerRef.current) {
-            clearInterval(recordingTimerRef.current);
-          }
-        },
-      });
-
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingTime(prev => {
-          if (prev >= 60) { 
-            stopRecording();
-            return 60;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+      
+      // Set up recording callbacks
+      banubaCameraRef.current.onRecordingStart = () => {
+        recordingTimerRef.current = setInterval(() => {
+          setRecordingTime(prev => {
+            if (prev >= 60) { 
+              stopRecording();
+              return 60;
+            }
+            return prev + 1;
+          });
+        }, 1000);
+      };
+      
+      banubaCameraRef.current.onRecordingStop = (video) => {
+        setCapturedVideo(video.uri);
+        setCapturedImage(null);
+        setIsRecording(false);
+        setRecordingTime(0);
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+        }
+        onVideoRecorded(video.uri, video);
+        onImageStateChange(true);
+        setImageCaptured(true);
+      };
+      
+      await banubaCameraRef.current.startRecording();
+      
     } catch (error) {
       console.error('Error starting recording:', error);
       setIsRecording(false);
+      setRecordingTime(0);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
     }
   };
 
   const stopRecording = async () => {
-    if (!camera.current || !isRecording) return;
+    if (!banubaCameraRef.current || !isRecording) return;
     
     try {
-      await camera.current.stopRecording();
+      await banubaCameraRef.current.stopRecording();
       setIsRecording(false);
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
@@ -327,12 +343,16 @@ const FaceOverlay = ({
     isLongPressRef.current = false;
   };
 
-  const toggleFlash = () => {
-    setFlashMode(prev => {
-      if (prev === 'off') return 'on';
-      if (prev === 'on') return 'auto';
-      return 'off';
-    });
+  const toggleFlash = async () => {
+    const modes = ['off', 'on', 'auto'];
+    const currentIndex = modes.indexOf(flashMode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    setFlashMode(nextMode);
+    
+    // Apply flash mode to Banuba camera
+    if (banubaCameraRef.current) {
+      await banubaCameraRef.current.setFlashMode(nextMode);
+    }
   };
 
   const handleOpenGallery = async () => {
@@ -589,7 +609,11 @@ const FaceOverlay = ({
       animated: true,
       viewPosition: 0.5,
     });
-    // Removed image capture - only change filter selection
+    
+    // Apply the selected filter to Banuba camera
+    if (banubaCameraRef.current) {
+      banubaCameraRef.current.applyFilter(item.id);
+    }
   };
 
   const getFilterItems = () => {
@@ -639,13 +663,7 @@ const FaceOverlay = ({
     );
   }
 
-  if (!currentDevice) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.permissionText}>Camera not available</Text>
-      </View>
-    );
-  }
+  // Banuba handles camera availability internally
 
   const backgroundSource = capturedImage 
     ? { uri: capturedImage } 
@@ -703,19 +721,21 @@ const FaceOverlay = ({
             </View>
 
             <View style={styles.rightToolbar}>
-              <ToolbarButton 
-                iconText="T"
+              <TouchableOpacity 
+                style={styles.toolbarButton}
                 onPress={handleAddText}
-              />
-              <ToolbarButton 
-                iconSource={Icons.Face}
-              />
-              <ToolbarButton 
-                iconSource={Icons.grid}
-              />
-              <ToolbarButton 
-                iconSource={Icons.down}
-              />
+              >
+                <Text style={styles.toolbarButtonText}>T</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarButton}>
+                <Text style={styles.toolbarButtonText}>😊</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarButton}>
+                <Text style={styles.toolbarButtonText}>##</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarButton}>
+                <Text style={styles.toolbarButtonText}>⬇️</Text>
+              </TouchableOpacity>
             </View>
 
             {textOverlays.map((textItem) => {
@@ -955,16 +975,29 @@ const FaceOverlay = ({
         </View>
       ) : (
         <View style={styles.cameraContainer} {...(panResponder.current?.panHandlers || {})}>
-          <Camera
-            ref={camera}
-            style={styles.camera}
-            device={currentDevice}
-            isActive={true}
-            photo={true}
-            video={true}
-            audio={hasMicPermission}
+          <BanubaCamera
+            ref={banubaCameraRef}
+            onCapture={(photo) => {
+              setCapturedImage(photo.uri);
+              onCapture(photo.uri, photo);
+            }}
+            onFaceDetected={(faceData) => {
+              // Handle face detection data from Banuba
+              console.log('Face detected:', faceData);
+            }}
+            selectedFilter={selectedCameraFilterId}
+            onRecordingStart={() => {
+              setIsRecording(true);
+              setRecordingTime(0);
+            }}
+            onRecordingStop={(video) => {
+              setCapturedVideo(video.uri);
+              setIsRecording(false);
+              setRecordingTime(0);
+              onVideoRecorded(video.uri, video);
+            }}
           />
-          
+        
           <View style={styles.overlayContainer}>
             <View style={styles.topOverlay}>
               <TouchableOpacity 
@@ -972,14 +1005,7 @@ const FaceOverlay = ({
                 onPress={toggleCamera}
                 activeOpacity={0.7}
               >
-                <Image 
-                  source={Icons.Face} 
-                  style={[
-                    styles.faceIcon,
-                    cameraType === 'front' && styles.faceIconActive
-                  ]} 
-                  resizeMode="contain"
-                />
+                <Text style={styles.faceIcon}>🔄</Text>
               </TouchableOpacity>
               <Text style={styles.title}>{headerTitle}</Text>
               <View style={styles.spacer} />
@@ -990,18 +1016,21 @@ const FaceOverlay = ({
             )}
 
             <View style={styles.rightToolbar}>
-              <ToolbarButton 
-                iconText={flashMode === 'off' ? '⚡' : flashMode === 'on' ? '⚡' : '⚡'}
+              <TouchableOpacity 
+                style={styles.toolbarButton}
                 onPress={toggleFlash}
-              />
-              <ToolbarButton 
-                iconSource={Icons.Face}
-              />
-              <ToolbarButton 
-                iconSource={Icons.grid}
-              />
+              >
+                <Text style={styles.toolbarButtonText}>
+                  {flashMode === 'off' ? '⚡' : flashMode === 'on' ? '💡' : '📸'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarButton}>
+                <Text style={styles.toolbarButtonText}>😊</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarButton}>
+                <Text style={styles.toolbarButtonText}>##</Text>
+              </TouchableOpacity>
             </View>
-
             <View style={styles.bottomControls}>
               <View style={styles.filterControls}>
                 <TouchableOpacity 
@@ -1036,7 +1065,7 @@ const FaceOverlay = ({
                       style={styles.snapCenterRing}
                       activeOpacity={0.8}
                       onPress={() => {
-                        if (!isCapturing && !isRecording && camera.current && currentDevice && !capturedImage) {
+                        if (!isCapturing && !isRecording && banubaCameraRef.current && !capturedImage) {
                           handleCapture();
                         }
                       }}
@@ -1192,9 +1221,13 @@ const styles = StyleSheet.create({
     width: scale(24),
     height: scale(24),
     tintColor: COLORS.white,
+    fontSize: scale(20),
+    textAlign: 'center',
+    color: COLORS.white,
   },
   faceIconActive: {
     tintColor: COLORS.primory1 || '#FFAD43',
+    color: COLORS.primory1 || '#FFAD43',
   },
   rightToolbar: {
     position: "absolute",
@@ -1778,6 +1811,19 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: scale(16),
     fontFamily: Fonts.Bold,
+  },
+  toolbarButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  toolbarButtonText: {
+    color: COLORS.white,
+    fontSize: 18,
   },
 });
 
