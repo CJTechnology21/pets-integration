@@ -15,11 +15,11 @@ const Onboarding4= () => {
     try {
       // Mark onboarding as complete
       await AsyncStorage.setItem('onboardingComplete', 'true');
-      // Navigate directly to CreateProfile
+      // Navigate to CreateProfile (signup) after onboarding completion
       navigation.navigate('CreateProfile');
     } catch (error) {
       console.error('Error marking onboarding as complete:', error);
-      // Still navigate to CreateProfile even if there's an error
+      // Navigate to CreateProfile even if there's an error
       navigation.navigate('CreateProfile');
     }
   };

@@ -40,18 +40,18 @@ export default function Navigation() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Attempt auto-login first
+        const autoLoginSuccess = await autoLogin();
+        setIsLoggedIn(autoLoginSuccess);
+        
         // Check onboarding status
         const onboardingComplete = await AsyncStorage.getItem(
           'onboardingComplete',
         );
         setIsOnboardingComplete(onboardingComplete === 'true');
-
-        // Attempt auto-login
-        const autoLoginSuccess = await autoLogin();
-        setIsLoggedIn(autoLoginSuccess);
       } catch (error) {
         console.error('Error initializing app:', error);
-        setIsOnboardingComplete(false);
+        setIsLoggedIn(false);
       } finally {
         setIsLoading(false);
       }
@@ -79,11 +79,9 @@ export default function Navigation() {
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName={
-          isOnboardingComplete
-            ? isLoggedIn
-              ? 'BottomTab'
-              : 'Login'
-            : 'Onboarding1'
+          isLoggedIn
+            ? 'BottomTab'
+            : 'Login'
         }
         screenOptions={{ headerShown: false }}
       >

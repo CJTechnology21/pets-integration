@@ -24,6 +24,7 @@ import { saveTokens } from '../../services/apiService';
 import Loader from '../../components/Loader'; // Import Loader component
 import { signInWithGoogle } from '../../services/googleSignInService';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const Login = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -130,8 +131,18 @@ const Login = () => {
             }),
           );
 
-          // Navigate to bottom tab navigator
-          navigation.navigate('BottomTab');
+          // Check if onboarding is completed, if not navigate to onboarding
+          try {
+            const onboardingComplete = await AsyncStorage.getItem('onboardingComplete');
+            if (onboardingComplete !== 'true') {
+              navigation.navigate('Onboarding1');
+            } else {
+              navigation.navigate('BottomTab');
+            }
+          } catch (error) {
+            console.error('Error checking onboarding status:', error);
+            navigation.navigate('BottomTab');
+          }
         } else {
           // Error message is already displayed via toast in handleApiCallWithLoader
         }
@@ -154,13 +165,28 @@ const Login = () => {
       console.log('result was >>>>.', result);
 
       if (result.success) {
-        // Navigate to bottom tab navigator
-        navigation.navigate('BottomTab');
-        Toast.show({
-          type: 'success',
-          text1: 'Login Successful!',
-          text2: 'You have been logged in with Google',
-        });
+        // Check if onboarding is completed, if not navigate to onboarding
+        try {
+          const onboardingComplete = await AsyncStorage.getItem('onboardingComplete');
+          if (onboardingComplete !== 'true') {
+            navigation.navigate('Onboarding1');
+          } else {
+            navigation.navigate('BottomTab');
+          }
+          Toast.show({
+            type: 'success',
+            text1: 'Login Successful!',
+            text2: 'You have been logged in with Google',
+          });
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+          navigation.navigate('BottomTab');
+          Toast.show({
+            type: 'success',
+            text1: 'Login Successful!',
+            text2: 'You have been logged in with Google',
+          });
+        }
       } else {
         Toast.show({
           type: 'error',
